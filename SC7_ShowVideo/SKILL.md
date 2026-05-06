@@ -68,7 +68,7 @@ description: "生成项目功能演示视频配套材料（自动化操作脚本
 - 支持 `pyautogui.FAILSAFE`（鼠标移到左上角紧急停止）
 - 提供可配置参数：`STEP_INTERVAL`、`TYPE_INTERVAL`、`LONG_PAUSE`、`SHORT_PAUSE`
 - 脚本用 `input()` 等待用户就绪（替代固定 sleep，更灵活）
-- 内置工具函数：`type_text()`、`click_button()`、`close_dialog(key)`、`pause_long()`、`pause_short()`、`step_wait()`
+- 内置工具函数：`type_text()`（剪贴板粘贴绕过输入法中英文切换）、`click_button()`、`close_dialog(key)`、`pause_long()`、`pause_short()`、`step_wait()`
 - `close_dialog(key)` 支持 `"enter"` 和 `"escape"` 两种关闭方式
 - pyautogui 延迟导入（`_pyautogui` / `_pa()` 模式），避免干扰 PyQt 应用初始化
 
@@ -107,7 +107,7 @@ description: "生成项目功能演示视频配套材料（自动化操作脚本
 
 脚本生成优先遵循以下策略：
 
-1. **最大化 UI 源码定位精度**：优先用 `Tab` 键逐字段导航 + `typewrite` 输入，避免依赖屏幕坐标定位（跨分辨率不兼容）
+1. **最大化 UI 源码定位精度**：优先用 `Tab` 键逐字段导航，`type_text()` 通过剪贴板 Ctrl+V 粘贴输入（绕过输入法中英文切换问题，避免乱码）
 2. **防呆环节优先于正确流程**：先演示空提交/错误输入触发弹窗，再修正为正确值——这种"先错后改"的节奏比直接填对更有演示价值
 3. **快捷键优先**：能用 `Alt+字母` 触发按钮的，用快捷键而非鼠标点击（加速演示同时避免坐标定位问题）
 4. **弹窗关闭双策略**：默认用 `Enter` 关闭弹窗，但某些对话框（如"关于"/"说明"类独立弹窗）用 `Escape` 更合适——`close_dialog(key)` 支持两种方式
@@ -120,7 +120,7 @@ description: "生成项目功能演示视频配套材料（自动化操作脚本
 
 | 操作 | 代码 | 说明 |
 |---|---|---|
-| 输入文本 | `type_text("内容")` | 逐字模拟打字，间隔 `TYPE_INTERVAL` |
+| 输入文本 | `type_text("内容")` | 剪贴板 Ctrl+V 粘贴，绕过 IME 中英文切换 |
 | Tab 前进一个字段 | `pyautogui.press("tab")` | 表单字段间跳转 |
 | Shift+Tab 后退 | `pyautogui.hotkey("shift", "tab")` | 回退到前一字段（修正错误值） |
 | 删除 N 个字符 | `pyautogui.press("backspace", presses=3)` | 删除错误输入后重新填入 |
@@ -167,3 +167,10 @@ python scripts/sc7_show_video.py --repo-root . --project-name MyProject --entry-
 - 生成后应提示用户：先启动应用，再运行自动化脚本，同时开启屏幕录制
 - 字幕时间戳为参考值，提醒用户可根据实际录制节奏微调
 - 字幕文件末尾必须附有关键术语中英对照表（至少 10 对）
+
+## IME 输入法注意事项
+
+`type_text()` 采用 **剪贴板粘贴（Ctrl+V）** 而非 `pyautogui.typewrite()`，原因：
+- `pyautogui.write()` 将按键事件直接送入当前输入法，中文输入法下字母数字会变成乱码
+- 剪贴板粘贴直接注入 Unicode 字符串，**完全不受输入法状态影响**
+- 模板内置 `_set_clipboard()`（通过 `tkinter` 标准库），`type_text()` 自动使用 Ctrl+V 粘贴

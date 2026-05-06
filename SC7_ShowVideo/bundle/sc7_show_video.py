@@ -351,9 +351,28 @@ def pause_short() -> None:
     time.sleep(SHORT_PAUSE)
 
 
+_clipboard_tk = None
+
+
+def _set_clipboard(text: str) -> None:
+    """Windows 剪贴板写入（绕过输入法中英文切换问题）
+    Set Windows clipboard via tkinter — bypasses IME input mode."""
+    global _clipboard_tk
+    if _clipboard_tk is None:
+        import tkinter
+        _clipboard_tk = tkinter.Tk()
+        _clipboard_tk.withdraw()
+    _clipboard_tk.clipboard_clear()
+    _clipboard_tk.clipboard_append(text)
+    _clipboard_tk.update()
+
+
 def type_text(text: str) -> None:
-    """逐字输入文本（模拟真实打字速度）/ Type text simulating real typing speed"""
-    _pa().typewrite(text, interval=TYPE_INTERVAL)
+    """粘贴文本（通过剪贴板 Ctrl+V，绕过输入法中英文切换问题）
+    Paste text via clipboard Ctrl+V — bypasses IME input mode issues."""
+    _set_clipboard(text)
+    time.sleep(0.06)
+    _pa().hotkey("ctrl", "v")
 
 
 def click_button(label_cn: str, label_en: str, hotkey: str | None = None) -> None:
